@@ -4,14 +4,14 @@ import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Navbar from "@/components/Navbar"
-import { BookOpen, Calendar, AlertCircle, CheckCircle, Clock } from "lucide-react"
+import { BookOpen, Calendar, AlertCircle, CheckCircle, Clock, ArrowLeft } from "lucide-react"
 import { returnBook } from "@/lib/actions"
 import Image from "next/image"
 
-export default function DashboardPage() {
+export default function BorrowsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [borrows, setBorrows] = useState([])
@@ -25,8 +25,6 @@ export default function DashboardPage() {
     }
 
     if (status === "authenticated") {
-      // Auto-update overdue status
-      fetch('/api/borrows/update-overdue', { method: 'POST' }).catch(console.error)
       fetchBorrows()
     }
   }, [status])
@@ -114,123 +112,90 @@ export default function DashboardPage() {
       <Navbar />
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
-          <p className="text-gray-500">Selamat datang, {session?.user?.name}</p>
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-4 mb-8">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Total Peminjaman</CardDescription>
-              <CardTitle className="text-3xl">{borrows.length}</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Aktif</CardDescription>
-              <CardTitle className="text-3xl text-blue-600">{activeBorrows.length}</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Dikembalikan</CardDescription>
-              <CardTitle className="text-3xl text-green-600">{returnedBorrows.length}</CardTitle>
-            </CardHeader>
-          </Card>
-        </div>
-
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Buku yang Sedang Dipinjam</h2>
-          <Link href="/books">
-            <Button variant="outline">
-              <BookOpen className="h-4 w-4 mr-2" />
-              Lihat Katalog
+          <Link href="/dashboard">
+            <Button variant="ghost" className="mb-4">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Kembali ke Dashboard
             </Button>
           </Link>
+          <h1 className="text-3xl font-bold mb-2">Peminjaman Saya</h1>
+          <p className="text-gray-500">Lihat semua riwayat peminjaman Anda</p>
         </div>
 
-        {activeBorrows.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <BookOpen className="h-16 w-16 text-gray-500 mx-auto mb-4" />
-              <p className="text-lg font-medium mb-2">Tidak ada peminjaman aktif</p>
-              <p className="text-gray-500 mb-4">Mulai pinjam buku dari katalog</p>
-              <Link href="/books">
-                <Button>Lihat Katalog Buku</Button>
-              </Link>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4">
-            {activeBorrows.map((borrow) => (
-              <Card key={borrow.id}>
-                <CardContent className="p-6">
-                  <div className="flex gap-6">
-                    <div className="w-24 h-32 relative bg-muted rounded-lg overflow-hidden flex-shrink-0">
-                      {borrow.book_image ? (
-                        <Image
-                          src={borrow.book_image.startsWith('/') ? borrow.book_image : `/books/${borrow.book_image}`}
-                          alt={borrow.book_title}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <BookOpen className="h-8 w-8 text-gray-500" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <h3 className="text-xl font-bold">{borrow.book_title}</h3>
-                          <p className="text-gray-500">{borrow.book_author}</p>
-                        </div>
-                        {getStatusBadge(borrow)}
+        {activeBorrows.length > 0 && (
+          <>
+            <h2 className="text-2xl font-bold mb-4">Peminjaman Aktif</h2>
+            <div className="grid gap-4 mb-8">
+              {activeBorrows.map((borrow) => (
+                <Card key={borrow.id}>
+                  <CardContent className="p-6">
+                    <div className="flex gap-6">
+                      <div className="w-24 h-32 relative bg-muted rounded-lg overflow-hidden flex-shrink-0">
+                        {borrow.book_image ? (
+                          <Image
+                            src={borrow.book_image.startsWith('/') ? borrow.book_image : `/books/${borrow.book_image}`}
+                            alt={borrow.book_title}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <BookOpen className="h-8 w-8 text-gray-500" />
+                          </div>
+                        )}
                       </div>
-                      <div className="grid md:grid-cols-2 gap-4 mt-4 text-sm">
-                        <div>
-                          <span className="text-gray-500">Tanggal Pinjam:</span>
-                          <p className="font-medium">
-                            {new Date(borrow.borrow_date).toLocaleDateString('id-ID')}
-                          </p>
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h3 className="text-xl font-bold">{borrow.book_title}</h3>
+                            <p className="text-gray-500">{borrow.book_author}</p>
+                          </div>
+                          {getStatusBadge(borrow)}
                         </div>
-                        <div>
-                          <span className="text-gray-500">Batas Pengembalian:</span>
-                          <p className="font-medium">
-                            {new Date(borrow.due_date).toLocaleDateString('id-ID')}
-                          </p>
+                        <div className="grid md:grid-cols-2 gap-4 mt-4 text-sm">
+                          <div>
+                            <span className="text-gray-500">Tanggal Pinjam:</span>
+                            <p className="font-medium">
+                              {new Date(borrow.borrow_date).toLocaleDateString('id-ID')}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Batas Pengembalian:</span>
+                            <p className="font-medium">
+                              {new Date(borrow.due_date).toLocaleDateString('id-ID')}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                      <div className="mt-4">
-                        <Button
-                          onClick={() => handleReturn(borrow.id)}
-                          disabled={returning[borrow.id]}
-                          variant="default"
-                        >
-                          {returning[borrow.id] ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                              Memproses...
-                            </>
-                          ) : (
-                            "Kembalikan Buku"
-                          )}
-                        </Button>
+                        <div className="mt-4">
+                          <Button
+                            onClick={() => handleReturn(borrow.id)}
+                            disabled={returning[borrow.id]}
+                            variant="default"
+                          >
+                            {returning[borrow.id] ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Memproses...
+                              </>
+                            ) : (
+                              "Kembalikan Buku"
+                            )}
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </>
         )}
 
         {returnedBorrows.length > 0 && (
           <>
-            <h2 className="text-2xl font-bold mt-8 mb-4">Riwayat Peminjaman</h2>
+            <h2 className="text-2xl font-bold mb-4">Riwayat Peminjaman</h2>
             <div className="grid gap-4">
-              {returnedBorrows.slice(0, 5).map((borrow) => (
+              {returnedBorrows.map((borrow) => (
                 <Card key={borrow.id} className="opacity-75">
                   <CardContent className="p-6">
                     <div className="flex gap-6">
@@ -284,7 +249,21 @@ export default function DashboardPage() {
             </div>
           </>
         )}
+
+        {borrows.length === 0 && (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <BookOpen className="h-16 w-16 text-gray-500 mx-auto mb-4" />
+              <p className="text-lg font-medium mb-2">Belum ada peminjaman</p>
+              <p className="text-gray-500 mb-4">Mulai pinjam buku dari katalog</p>
+              <Link href="/books">
+                <Button>Lihat Katalog Buku</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
       </main>
     </div>
   )
 }
+

@@ -13,7 +13,7 @@ export async function GET() {
   try {
     let query = `
       SELECT b.*, u.name as user_name, u.email as user_email, 
-             bk.title as book_title, bk.author as book_author
+             bk.title as book_title, bk.author as book_author, bk.image as book_image
       FROM borrows b
       JOIN users u ON b.user_id = u.id
       JOIN books bk ON b.book_id = bk.id
@@ -21,7 +21,7 @@ export async function GET() {
 
     if (session.user.role !== 'admin') {
       query += ' WHERE b.user_id = ?';
-      const [borrows] = await pool.query(query, [session.user.id]);
+      const [borrows] = await pool.query(query + ' ORDER BY b.created_at DESC', [session.user.id]);
       return NextResponse.json(borrows, { status: 200 });
     } else {
       const [borrows] = await pool.query(query + ' ORDER BY b.created_at DESC');
@@ -52,9 +52,29 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Book not available' }, { status: 400 });
     }
 
+    // Check if user already has an active borrow for this book
+    const [activeBorrows] = await pool.query(
+      'SELECT * FROM borrows WHERE user_id = ? AND book_id = ? AND status IN (?, ?)',
+      [session.user.id, book_id, 'borrowed', 'overdue'],
+    );
+
+    if (activeBorrows.length > 0) {
+      return NextResponse.json({ error: 'You already have an active borrow for this book' }, { status: 400 });
+    }
+
+    // Check max 3 active borrows
+    const [allActiveBorrows] = await pool.query(
+      'SELECT COUNT(*) as count FROM borrows WHERE user_id = ? AND status IN (?, ?)',
+      [session.user.id, 'borrowed', 'overdue'],
+    );
+
+    if (allActiveBorrows[0].count >= 3) {
+      return NextResponse.json({ error: 'Maximum 3 active borrows allowed' }, { status: 400 });
+    }
+
     const borrowDate = new Date();
     const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 14);
+    dueDate.setDate(dueDate.getDate() + 7);
 
     const [result] = await pool.query(
       'INSERT INTO borrows (user_id, book_id, borrow_date, due_date, status) VALUES (?, ?, ?, ?, ?)',
@@ -71,5 +91,3 @@ export async function POST(request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
-
-
