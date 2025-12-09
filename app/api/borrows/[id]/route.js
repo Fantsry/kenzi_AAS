@@ -5,6 +5,7 @@ import { authOptions } from '../../auth/[...nextauth]/route';
 
 export async function PUT(request, { params }) {
   const session = await getServerSession(authOptions);
+  const { id } = await params;
 
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -15,7 +16,7 @@ export async function PUT(request, { params }) {
 
   try {
     // Get borrow record
-    const [borrows] = await pool.query('SELECT * FROM borrows WHERE id = ?', [params.id]);
+    const [borrows] = await pool.query('SELECT * FROM borrows WHERE id = ?', [id]);
     if (borrows.length === 0) {
       return NextResponse.json({ error: 'Borrow record not found' }, { status: 404 });
     }
@@ -32,11 +33,11 @@ export async function PUT(request, { params }) {
       const returnDate = new Date();
       await pool.query(
         'UPDATE borrows SET status = ?, return_date = ? WHERE id = ?',
-        [newStatus, returnDate, params.id],
+        [newStatus, returnDate, id],
       );
       await pool.query('UPDATE books SET available = available + 1 WHERE id = ?', [borrow.book_id]);
     } else {
-      await pool.query('UPDATE borrows SET status = ? WHERE id = ?', [newStatus, params.id]);
+      await pool.query('UPDATE borrows SET status = ? WHERE id = ?', [newStatus, id]);
     }
 
     return NextResponse.json({ message: 'Borrow updated' }, { status: 200 });

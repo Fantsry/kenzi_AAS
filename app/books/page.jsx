@@ -18,6 +18,7 @@ export default function BooksPage() {
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(true)
 
+
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login")
@@ -94,10 +95,11 @@ export default function BooksPage() {
                   <div className="aspect-[3/4] relative mb-4 bg-muted rounded-lg overflow-hidden">
                     {book.image ? (
                       <Image
-                        src={book.image.startsWith('/') ? book.image : `/books/${book.image}`}
+                        src={`/${book.image}`}
                         alt={book.title}
                         fill
                         className="object-cover"
+                        sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 100vw"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">

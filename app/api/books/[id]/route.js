@@ -4,8 +4,10 @@ import pool from '../../../../lib/db';
 import { authOptions } from '../../auth/[...nextauth]/route';
 
 export async function GET(request, { params }) {
+  const { id } = await params;
+
   try {
-    const [books] = await pool.query('SELECT * FROM books WHERE id = ?', [params.id]);
+    const [books] = await pool.query('SELECT * FROM books WHERE id = ?', [id]);
     if (books.length === 0) {
       return NextResponse.json({ error: 'Book not found' }, { status: 404 });
     }
@@ -17,6 +19,7 @@ export async function GET(request, { params }) {
 
 export async function PUT(request, { params }) {
   const session = await getServerSession(authOptions);
+  const { id } = await params;
 
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -35,7 +38,7 @@ export async function PUT(request, { params }) {
 
   try {
     // Get current book to calculate available
-    const [currentBook] = await pool.query('SELECT stock, available FROM books WHERE id = ?', [params.id]);
+    const [currentBook] = await pool.query('SELECT stock, available FROM books WHERE id = ?', [id]);
     if (currentBook.length === 0) {
       return NextResponse.json({ error: 'Book not found' }, { status: 404 });
     }
@@ -47,7 +50,7 @@ export async function PUT(request, { params }) {
 
     await pool.query(
       'UPDATE books SET title = ?, author = ?, isbn = ?, stock = ?, available = ?, image = ? WHERE id = ?',
-      [title, author, isbn, stock, newAvailable, image || null, params.id],
+      [title, author, isbn, stock, newAvailable, image || null, id],
     );
 
     return NextResponse.json({ message: 'Book updated' }, { status: 200 });
@@ -58,6 +61,7 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
   const session = await getServerSession(authOptions);
+  const { id } = await params;
 
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -68,7 +72,7 @@ export async function DELETE(request, { params }) {
   }
 
   try {
-    await pool.query('DELETE FROM books WHERE id = ?', [params.id]);
+    await pool.query('DELETE FROM books WHERE id = ?', [id]);
     return NextResponse.json({ message: 'Book deleted' }, { status: 200 });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

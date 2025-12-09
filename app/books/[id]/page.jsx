@@ -20,6 +20,14 @@ export default function BookDetailPage() {
   const [borrowing, setBorrowing] = useState(false)
   const [error, setError] = useState("")
 
+  const resolveImageSrc = (image) => {
+    if (!image) return "/book-placeholder.svg"
+    if (image.startsWith("http")) return image
+    if (image.startsWith("/")) return image
+    if (image.startsWith("data:")) return image
+    return "/book-placeholder.svg"
+  }
+
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login")
@@ -127,10 +135,11 @@ export default function BookDetailPage() {
               <div className="aspect-[3/4] relative bg-muted rounded-lg overflow-hidden">
                 {book.image ? (
                   <Image
-                    src={book.image.startsWith('/') ? book.image : `/books/${book.image}`}
+                    src={resolveImageSrc(book.image)}
                     alt={book.title}
                     fill
                     className="object-cover"
+                    sizes="(min-width: 768px) 50vw, 100vw"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
